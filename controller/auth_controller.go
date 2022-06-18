@@ -133,7 +133,7 @@ func (a *AuthController) Logout(e echo.Context) error {
 		})
 	}
 	return e.JSON(http.StatusAccepted, echo.Map{
-		"msg": "logged out",
+		"msg": "logged out user",
 	})
 
 }
