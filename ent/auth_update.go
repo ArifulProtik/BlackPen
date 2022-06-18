@@ -6,13 +6,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/ArifulProtik/BlackPen/ent/auth"
 	"github.com/ArifulProtik/BlackPen/ent/predicate"
-	"github.com/ArifulProtik/BlackPen/ent/user"
 	"github.com/google/uuid"
 )
 
@@ -29,15 +29,9 @@ func (au *AuthUpdate) Where(ps ...predicate.Auth) *AuthUpdate {
 	return au
 }
 
-// SetSessionID sets the "session_id" field.
-func (au *AuthUpdate) SetSessionID(u uuid.UUID) *AuthUpdate {
-	au.mutation.SetSessionID(u)
-	return au
-}
-
-// SetIP sets the "ip" field.
-func (au *AuthUpdate) SetIP(s string) *AuthUpdate {
-	au.mutation.SetIP(s)
+// SetSessionid sets the "sessionid" field.
+func (au *AuthUpdate) SetSessionid(u uuid.UUID) *AuthUpdate {
+	au.mutation.SetSessionid(u)
 	return au
 }
 
@@ -55,26 +49,23 @@ func (au *AuthUpdate) SetNillableIsBlocked(b *bool) *AuthUpdate {
 	return au
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (au *AuthUpdate) SetUserID(id uuid.UUID) *AuthUpdate {
-	au.mutation.SetUserID(id)
+// SetCreatedAt sets the "created_at" field.
+func (au *AuthUpdate) SetCreatedAt(t time.Time) *AuthUpdate {
+	au.mutation.SetCreatedAt(t)
 	return au
 }
 
-// SetUser sets the "user" edge to the User entity.
-func (au *AuthUpdate) SetUser(u *User) *AuthUpdate {
-	return au.SetUserID(u.ID)
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (au *AuthUpdate) SetNillableCreatedAt(t *time.Time) *AuthUpdate {
+	if t != nil {
+		au.SetCreatedAt(*t)
+	}
+	return au
 }
 
 // Mutation returns the AuthMutation object of the builder.
 func (au *AuthUpdate) Mutation() *AuthMutation {
 	return au.mutation
-}
-
-// ClearUser clears the "user" edge to the User entity.
-func (au *AuthUpdate) ClearUser() *AuthUpdate {
-	au.mutation.ClearUser()
-	return au
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -84,18 +75,12 @@ func (au *AuthUpdate) Save(ctx context.Context) (int, error) {
 		affected int
 	)
 	if len(au.hooks) == 0 {
-		if err = au.check(); err != nil {
-			return 0, err
-		}
 		affected, err = au.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*AuthMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = au.check(); err != nil {
-				return 0, err
 			}
 			au.mutation = mutation
 			affected, err = au.sqlSave(ctx)
@@ -137,19 +122,6 @@ func (au *AuthUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (au *AuthUpdate) check() error {
-	if v, ok := au.mutation.IP(); ok {
-		if err := auth.IPValidator(v); err != nil {
-			return &ValidationError{Name: "ip", err: fmt.Errorf(`ent: validator failed for field "Auth.ip": %w`, err)}
-		}
-	}
-	if _, ok := au.mutation.UserID(); au.mutation.UserCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Auth.user"`)
-	}
-	return nil
-}
-
 func (au *AuthUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
@@ -168,18 +140,11 @@ func (au *AuthUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := au.mutation.SessionID(); ok {
+	if value, ok := au.mutation.Sessionid(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeUUID,
 			Value:  value,
-			Column: auth.FieldSessionID,
-		})
-	}
-	if value, ok := au.mutation.IP(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: auth.FieldIP,
+			Column: auth.FieldSessionid,
 		})
 	}
 	if value, ok := au.mutation.IsBlocked(); ok {
@@ -189,40 +154,12 @@ func (au *AuthUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: auth.FieldIsBlocked,
 		})
 	}
-	if au.mutation.UserCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   auth.UserTable,
-			Columns: []string{auth.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: user.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := au.mutation.UserIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   auth.UserTable,
-			Columns: []string{auth.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: user.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	if value, ok := au.mutation.CreatedAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: auth.FieldCreatedAt,
+		})
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, au.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -243,15 +180,9 @@ type AuthUpdateOne struct {
 	mutation *AuthMutation
 }
 
-// SetSessionID sets the "session_id" field.
-func (auo *AuthUpdateOne) SetSessionID(u uuid.UUID) *AuthUpdateOne {
-	auo.mutation.SetSessionID(u)
-	return auo
-}
-
-// SetIP sets the "ip" field.
-func (auo *AuthUpdateOne) SetIP(s string) *AuthUpdateOne {
-	auo.mutation.SetIP(s)
+// SetSessionid sets the "sessionid" field.
+func (auo *AuthUpdateOne) SetSessionid(u uuid.UUID) *AuthUpdateOne {
+	auo.mutation.SetSessionid(u)
 	return auo
 }
 
@@ -269,26 +200,23 @@ func (auo *AuthUpdateOne) SetNillableIsBlocked(b *bool) *AuthUpdateOne {
 	return auo
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (auo *AuthUpdateOne) SetUserID(id uuid.UUID) *AuthUpdateOne {
-	auo.mutation.SetUserID(id)
+// SetCreatedAt sets the "created_at" field.
+func (auo *AuthUpdateOne) SetCreatedAt(t time.Time) *AuthUpdateOne {
+	auo.mutation.SetCreatedAt(t)
 	return auo
 }
 
-// SetUser sets the "user" edge to the User entity.
-func (auo *AuthUpdateOne) SetUser(u *User) *AuthUpdateOne {
-	return auo.SetUserID(u.ID)
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (auo *AuthUpdateOne) SetNillableCreatedAt(t *time.Time) *AuthUpdateOne {
+	if t != nil {
+		auo.SetCreatedAt(*t)
+	}
+	return auo
 }
 
 // Mutation returns the AuthMutation object of the builder.
 func (auo *AuthUpdateOne) Mutation() *AuthMutation {
 	return auo.mutation
-}
-
-// ClearUser clears the "user" edge to the User entity.
-func (auo *AuthUpdateOne) ClearUser() *AuthUpdateOne {
-	auo.mutation.ClearUser()
-	return auo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -305,18 +233,12 @@ func (auo *AuthUpdateOne) Save(ctx context.Context) (*Auth, error) {
 		node *Auth
 	)
 	if len(auo.hooks) == 0 {
-		if err = auo.check(); err != nil {
-			return nil, err
-		}
 		node, err = auo.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*AuthMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = auo.check(); err != nil {
-				return nil, err
 			}
 			auo.mutation = mutation
 			node, err = auo.sqlSave(ctx)
@@ -358,19 +280,6 @@ func (auo *AuthUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (auo *AuthUpdateOne) check() error {
-	if v, ok := auo.mutation.IP(); ok {
-		if err := auth.IPValidator(v); err != nil {
-			return &ValidationError{Name: "ip", err: fmt.Errorf(`ent: validator failed for field "Auth.ip": %w`, err)}
-		}
-	}
-	if _, ok := auo.mutation.UserID(); auo.mutation.UserCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Auth.user"`)
-	}
-	return nil
-}
-
 func (auo *AuthUpdateOne) sqlSave(ctx context.Context) (_node *Auth, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
@@ -406,18 +315,11 @@ func (auo *AuthUpdateOne) sqlSave(ctx context.Context) (_node *Auth, err error) 
 			}
 		}
 	}
-	if value, ok := auo.mutation.SessionID(); ok {
+	if value, ok := auo.mutation.Sessionid(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeUUID,
 			Value:  value,
-			Column: auth.FieldSessionID,
-		})
-	}
-	if value, ok := auo.mutation.IP(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: auth.FieldIP,
+			Column: auth.FieldSessionid,
 		})
 	}
 	if value, ok := auo.mutation.IsBlocked(); ok {
@@ -427,40 +329,12 @@ func (auo *AuthUpdateOne) sqlSave(ctx context.Context) (_node *Auth, err error) 
 			Column: auth.FieldIsBlocked,
 		})
 	}
-	if auo.mutation.UserCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   auth.UserTable,
-			Columns: []string{auth.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: user.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := auo.mutation.UserIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   auth.UserTable,
-			Columns: []string{auth.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: user.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	if value, ok := auo.mutation.CreatedAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: auth.FieldCreatedAt,
+		})
 	}
 	_node = &Auth{config: auo.config}
 	_spec.Assign = _node.assignValues

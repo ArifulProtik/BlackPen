@@ -23,7 +23,6 @@ func main() {
 	mainservice := services.New(newdb)
 	exp := time.Minute * 10
 	Auth := auth.NewToken(cfg.ServerConfig.Jwt_Key, exp)
-	log.Println(cfg.Jwt_Key)
-	router.InitRouter(server.Echo.Group("/api/v1"), mainservice, Auth)
+	router.InitRouter(server.Echo.Group("/api/v1"), mainservice, Auth, cfg.Jwt_Key)
 	server.Run()
 }

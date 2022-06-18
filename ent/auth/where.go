@@ -3,8 +3,9 @@
 package auth
 
 import (
+	"time"
+
 	"entgo.io/ent/dialect/sql"
-	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/ArifulProtik/BlackPen/ent/predicate"
 	"github.com/google/uuid"
 )
@@ -92,17 +93,10 @@ func IDLTE(id uuid.UUID) predicate.Auth {
 	})
 }
 
-// SessionID applies equality check predicate on the "session_id" field. It's identical to SessionIDEQ.
-func SessionID(v uuid.UUID) predicate.Auth {
+// Sessionid applies equality check predicate on the "sessionid" field. It's identical to SessionidEQ.
+func Sessionid(v uuid.UUID) predicate.Auth {
 	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldSessionID), v))
-	})
-}
-
-// IP applies equality check predicate on the "ip" field. It's identical to IPEQ.
-func IP(v string) predicate.Auth {
-	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldIP), v))
+		s.Where(sql.EQ(s.C(FieldSessionid), v))
 	})
 }
 
@@ -113,22 +107,29 @@ func IsBlocked(v bool) predicate.Auth {
 	})
 }
 
-// SessionIDEQ applies the EQ predicate on the "session_id" field.
-func SessionIDEQ(v uuid.UUID) predicate.Auth {
+// CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
+func CreatedAt(v time.Time) predicate.Auth {
 	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldSessionID), v))
+		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
 	})
 }
 
-// SessionIDNEQ applies the NEQ predicate on the "session_id" field.
-func SessionIDNEQ(v uuid.UUID) predicate.Auth {
+// SessionidEQ applies the EQ predicate on the "sessionid" field.
+func SessionidEQ(v uuid.UUID) predicate.Auth {
 	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldSessionID), v))
+		s.Where(sql.EQ(s.C(FieldSessionid), v))
 	})
 }
 
-// SessionIDIn applies the In predicate on the "session_id" field.
-func SessionIDIn(vs ...uuid.UUID) predicate.Auth {
+// SessionidNEQ applies the NEQ predicate on the "sessionid" field.
+func SessionidNEQ(v uuid.UUID) predicate.Auth {
+	return predicate.Auth(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldSessionid), v))
+	})
+}
+
+// SessionidIn applies the In predicate on the "sessionid" field.
+func SessionidIn(vs ...uuid.UUID) predicate.Auth {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -140,12 +141,12 @@ func SessionIDIn(vs ...uuid.UUID) predicate.Auth {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.In(s.C(FieldSessionID), v...))
+		s.Where(sql.In(s.C(FieldSessionid), v...))
 	})
 }
 
-// SessionIDNotIn applies the NotIn predicate on the "session_id" field.
-func SessionIDNotIn(vs ...uuid.UUID) predicate.Auth {
+// SessionidNotIn applies the NotIn predicate on the "sessionid" field.
+func SessionidNotIn(vs ...uuid.UUID) predicate.Auth {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -157,146 +158,35 @@ func SessionIDNotIn(vs ...uuid.UUID) predicate.Auth {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.NotIn(s.C(FieldSessionID), v...))
+		s.Where(sql.NotIn(s.C(FieldSessionid), v...))
 	})
 }
 
-// SessionIDGT applies the GT predicate on the "session_id" field.
-func SessionIDGT(v uuid.UUID) predicate.Auth {
+// SessionidGT applies the GT predicate on the "sessionid" field.
+func SessionidGT(v uuid.UUID) predicate.Auth {
 	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldSessionID), v))
+		s.Where(sql.GT(s.C(FieldSessionid), v))
 	})
 }
 
-// SessionIDGTE applies the GTE predicate on the "session_id" field.
-func SessionIDGTE(v uuid.UUID) predicate.Auth {
+// SessionidGTE applies the GTE predicate on the "sessionid" field.
+func SessionidGTE(v uuid.UUID) predicate.Auth {
 	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldSessionID), v))
+		s.Where(sql.GTE(s.C(FieldSessionid), v))
 	})
 }
 
-// SessionIDLT applies the LT predicate on the "session_id" field.
-func SessionIDLT(v uuid.UUID) predicate.Auth {
+// SessionidLT applies the LT predicate on the "sessionid" field.
+func SessionidLT(v uuid.UUID) predicate.Auth {
 	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldSessionID), v))
+		s.Where(sql.LT(s.C(FieldSessionid), v))
 	})
 }
 
-// SessionIDLTE applies the LTE predicate on the "session_id" field.
-func SessionIDLTE(v uuid.UUID) predicate.Auth {
+// SessionidLTE applies the LTE predicate on the "sessionid" field.
+func SessionidLTE(v uuid.UUID) predicate.Auth {
 	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldSessionID), v))
-	})
-}
-
-// IPEQ applies the EQ predicate on the "ip" field.
-func IPEQ(v string) predicate.Auth {
-	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldIP), v))
-	})
-}
-
-// IPNEQ applies the NEQ predicate on the "ip" field.
-func IPNEQ(v string) predicate.Auth {
-	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldIP), v))
-	})
-}
-
-// IPIn applies the In predicate on the "ip" field.
-func IPIn(vs ...string) predicate.Auth {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Auth(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.In(s.C(FieldIP), v...))
-	})
-}
-
-// IPNotIn applies the NotIn predicate on the "ip" field.
-func IPNotIn(vs ...string) predicate.Auth {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Auth(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.NotIn(s.C(FieldIP), v...))
-	})
-}
-
-// IPGT applies the GT predicate on the "ip" field.
-func IPGT(v string) predicate.Auth {
-	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldIP), v))
-	})
-}
-
-// IPGTE applies the GTE predicate on the "ip" field.
-func IPGTE(v string) predicate.Auth {
-	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldIP), v))
-	})
-}
-
-// IPLT applies the LT predicate on the "ip" field.
-func IPLT(v string) predicate.Auth {
-	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldIP), v))
-	})
-}
-
-// IPLTE applies the LTE predicate on the "ip" field.
-func IPLTE(v string) predicate.Auth {
-	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldIP), v))
-	})
-}
-
-// IPContains applies the Contains predicate on the "ip" field.
-func IPContains(v string) predicate.Auth {
-	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldIP), v))
-	})
-}
-
-// IPHasPrefix applies the HasPrefix predicate on the "ip" field.
-func IPHasPrefix(v string) predicate.Auth {
-	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldIP), v))
-	})
-}
-
-// IPHasSuffix applies the HasSuffix predicate on the "ip" field.
-func IPHasSuffix(v string) predicate.Auth {
-	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldIP), v))
-	})
-}
-
-// IPEqualFold applies the EqualFold predicate on the "ip" field.
-func IPEqualFold(v string) predicate.Auth {
-	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldIP), v))
-	})
-}
-
-// IPContainsFold applies the ContainsFold predicate on the "ip" field.
-func IPContainsFold(v string) predicate.Auth {
-	return predicate.Auth(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldIP), v))
+		s.Where(sql.LTE(s.C(FieldSessionid), v))
 	})
 }
 
@@ -314,31 +204,79 @@ func IsBlockedNEQ(v bool) predicate.Auth {
 	})
 }
 
-// HasUser applies the HasEdge predicate on the "user" edge.
-func HasUser() predicate.Auth {
+// CreatedAtEQ applies the EQ predicate on the "created_at" field.
+func CreatedAtEQ(v time.Time) predicate.Auth {
 	return predicate.Auth(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(UserTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
+		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
 	})
 }
 
-// HasUserWith applies the HasEdge predicate on the "user" edge with a given conditions (other predicates).
-func HasUserWith(preds ...predicate.User) predicate.Auth {
+// CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
+func CreatedAtNEQ(v time.Time) predicate.Auth {
 	return predicate.Auth(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(UserInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
-		)
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
+		s.Where(sql.NEQ(s.C(FieldCreatedAt), v))
+	})
+}
+
+// CreatedAtIn applies the In predicate on the "created_at" field.
+func CreatedAtIn(vs ...time.Time) predicate.Auth {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Auth(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldCreatedAt), v...))
+	})
+}
+
+// CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
+func CreatedAtNotIn(vs ...time.Time) predicate.Auth {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Auth(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldCreatedAt), v...))
+	})
+}
+
+// CreatedAtGT applies the GT predicate on the "created_at" field.
+func CreatedAtGT(v time.Time) predicate.Auth {
+	return predicate.Auth(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldCreatedAt), v))
+	})
+}
+
+// CreatedAtGTE applies the GTE predicate on the "created_at" field.
+func CreatedAtGTE(v time.Time) predicate.Auth {
+	return predicate.Auth(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldCreatedAt), v))
+	})
+}
+
+// CreatedAtLT applies the LT predicate on the "created_at" field.
+func CreatedAtLT(v time.Time) predicate.Auth {
+	return predicate.Auth(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldCreatedAt), v))
+	})
+}
+
+// CreatedAtLTE applies the LTE predicate on the "created_at" field.
+func CreatedAtLTE(v time.Time) predicate.Auth {
+	return predicate.Auth(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldCreatedAt), v))
 	})
 }
 

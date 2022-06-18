@@ -5,6 +5,7 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/ArifulProtik/BlackPen/ent/user"
@@ -26,27 +27,8 @@ type User struct {
 	ProfilePic string `json:"profile_pic,omitempty"`
 	// Password holds the value of the "password" field.
 	Password string `json:"-"`
-	// Edges holds the relations/edges for other nodes in the graph.
-	// The values are being populated by the UserQuery when eager-loading is set.
-	Edges UserEdges `json:"edges"`
-}
-
-// UserEdges holds the relations/edges for other nodes in the graph.
-type UserEdges struct {
-	// Authentication holds the value of the authentication edge.
-	Authentication []*Auth `json:"authentication,omitempty"`
-	// loadedTypes holds the information for reporting if a
-	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
-}
-
-// AuthenticationOrErr returns the Authentication value or an error if the edge
-// was not loaded in eager-loading.
-func (e UserEdges) AuthenticationOrErr() ([]*Auth, error) {
-	if e.loadedTypes[0] {
-		return e.Authentication, nil
-	}
-	return nil, &NotLoadedError{edge: "authentication"}
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt time.Time `json:"created_at,omitempty"`
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -56,6 +38,8 @@ func (*User) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case user.FieldName, user.FieldUsername, user.FieldEmail, user.FieldProfilePic, user.FieldPassword:
 			values[i] = new(sql.NullString)
+		case user.FieldCreatedAt:
+			values[i] = new(sql.NullTime)
 		case user.FieldID:
 			values[i] = new(uuid.UUID)
 		default:
@@ -109,14 +93,15 @@ func (u *User) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				u.Password = value.String
 			}
+		case user.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
+			} else if value.Valid {
+				u.CreatedAt = value.Time
+			}
 		}
 	}
 	return nil
-}
-
-// QueryAuthentication queries the "authentication" edge of the User entity.
-func (u *User) QueryAuthentication() *AuthQuery {
-	return (&UserClient{config: u.config}).QueryAuthentication(u)
 }
 
 // Update returns a builder for updating this User.
@@ -151,6 +136,8 @@ func (u *User) String() string {
 	builder.WriteString(", profile_pic=")
 	builder.WriteString(u.ProfilePic)
 	builder.WriteString(", password=<sensitive>")
+	builder.WriteString(", created_at=")
+	builder.WriteString(u.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

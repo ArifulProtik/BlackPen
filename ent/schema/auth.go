@@ -1,8 +1,9 @@
 package schema
 
 import (
+	"time"
+
 	"entgo.io/ent"
-	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 )
@@ -16,16 +17,13 @@ type Auth struct {
 func (Auth) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New),
-		field.UUID("session_id", uuid.UUID{}),
-		field.String("ip").NotEmpty(),
+		field.UUID("sessionid", uuid.UUID{}),
 		field.Bool("is_blocked").Default(false),
+		field.Time("created_at").Default(time.Now),
 	}
 }
 
 // Edges of the Auth.
 func (Auth) Edges() []ent.Edge {
-	return []ent.Edge{
-		edge.From("user", User.Type).
-			Ref("authentication").Unique().Required(),
-	}
+	return nil
 }

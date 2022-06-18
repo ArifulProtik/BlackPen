@@ -15,7 +15,6 @@ import (
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
-	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // Client is the client that holds all ent builders.
@@ -216,22 +215,6 @@ func (c *AuthClient) GetX(ctx context.Context, id uuid.UUID) *Auth {
 	return obj
 }
 
-// QueryUser queries the user edge of a Auth.
-func (c *AuthClient) QueryUser(a *Auth) *UserQuery {
-	query := &UserQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := a.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(auth.Table, auth.FieldID, id),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, auth.UserTable, auth.UserColumn),
-		)
-		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // Hooks returns the client hooks.
 func (c *AuthClient) Hooks() []Hook {
 	return c.hooks.Auth
@@ -320,22 +303,6 @@ func (c *UserClient) GetX(ctx context.Context, id uuid.UUID) *User {
 		panic(err)
 	}
 	return obj
-}
-
-// QueryAuthentication queries the authentication edge of a User.
-func (c *UserClient) QueryAuthentication(u *User) *AuthQuery {
-	query := &AuthQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := u.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(user.Table, user.FieldID, id),
-			sqlgraph.To(auth.Table, auth.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.AuthenticationTable, user.AuthenticationColumn),
-		)
-		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
 }
 
 // Hooks returns the client hooks.

@@ -1,6 +1,8 @@
 package services
 
-import "github.com/ArifulProtik/BlackPen/ent"
+import (
+	"github.com/ArifulProtik/BlackPen/ent"
+)
 
 type Service struct {
 	Auth *AuthService

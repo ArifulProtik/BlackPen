@@ -3,6 +3,8 @@
 package ent
 
 import (
+	"time"
+
 	"github.com/ArifulProtik/BlackPen/ent/auth"
 	"github.com/ArifulProtik/BlackPen/ent/schema"
 	"github.com/ArifulProtik/BlackPen/ent/user"
@@ -15,14 +17,14 @@ import (
 func init() {
 	authFields := schema.Auth{}.Fields()
 	_ = authFields
-	// authDescIP is the schema descriptor for ip field.
-	authDescIP := authFields[2].Descriptor()
-	// auth.IPValidator is a validator for the "ip" field. It is called by the builders before save.
-	auth.IPValidator = authDescIP.Validators[0].(func(string) error)
 	// authDescIsBlocked is the schema descriptor for is_blocked field.
-	authDescIsBlocked := authFields[3].Descriptor()
+	authDescIsBlocked := authFields[2].Descriptor()
 	// auth.DefaultIsBlocked holds the default value on creation for the is_blocked field.
 	auth.DefaultIsBlocked = authDescIsBlocked.Default.(bool)
+	// authDescCreatedAt is the schema descriptor for created_at field.
+	authDescCreatedAt := authFields[3].Descriptor()
+	// auth.DefaultCreatedAt holds the default value on creation for the created_at field.
+	auth.DefaultCreatedAt = authDescCreatedAt.Default.(func() time.Time)
 	// authDescID is the schema descriptor for id field.
 	authDescID := authFields[0].Descriptor()
 	// auth.DefaultID holds the default value on creation for the id field.
@@ -45,6 +47,10 @@ func init() {
 	userDescPassword := userFields[5].Descriptor()
 	// user.PasswordValidator is a validator for the "password" field. It is called by the builders before save.
 	user.PasswordValidator = userDescPassword.Validators[0].(func(string) error)
+	// userDescCreatedAt is the schema descriptor for created_at field.
+	userDescCreatedAt := userFields[6].Descriptor()
+	// user.DefaultCreatedAt holds the default value on creation for the created_at field.
+	user.DefaultCreatedAt = userDescCreatedAt.Default.(func() time.Time)
 	// userDescID is the schema descriptor for id field.
 	userDescID := userFields[0].Descriptor()
 	// user.DefaultID holds the default value on creation for the id field.

@@ -19,6 +19,21 @@ func NewToken(key string, time time.Duration) *Token {
 		Expireat: time,
 	}
 }
+func (t *Token) RfTokenWithSession(id uuid.UUID) (error, string) {
+	exipre := time.Now().Add(time.Hour * 24 * 30 * 12)
+	rftoken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		ExpiresAt: jwt.NewNumericDate(exipre),
+		NotBefore: jwt.NewNumericDate(time.Now()),
+		Subject:   id.String(),
+	})
+
+	rftokenstring, err := rftoken.SignedString([]byte(t.Key))
+	if err != nil {
+		return err, ""
+	}
+	return nil, rftokenstring
+}
 
 func (t *Token) TokenWithUser(id uuid.UUID) (error, string) {
 	expire := time.Now().Add(t.Expireat)
@@ -39,11 +54,11 @@ func (t *Token) VerifyToken(jwtkey string) (error, uuid.UUID) {
 	claimes := jwt.RegisteredClaims{}
 
 	decoded, err := jwt.ParseWithClaims(jwtkey, &claimes, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("False")
 		}
 		return []byte(t.Key), nil
-	}, jwt.WithValidMethods([]string{jwt.SigningMethodRS256.Name}))
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}))
 
 	if err != nil {
 		return err, uuid.UUID{}

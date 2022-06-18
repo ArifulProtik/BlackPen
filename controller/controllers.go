@@ -13,6 +13,7 @@ func New(services *services.Service, AuthToken *auth.Token) *Controller {
 	return &Controller{
 		Auth: &AuthController{
 			UserService: services.User,
+			AuthService: services.Auth,
 			AuthToken:   AuthToken,
 		},
 	}

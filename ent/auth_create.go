@@ -6,11 +6,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/ArifulProtik/BlackPen/ent/auth"
-	"github.com/ArifulProtik/BlackPen/ent/user"
 	"github.com/google/uuid"
 )
 
@@ -21,15 +21,9 @@ type AuthCreate struct {
 	hooks    []Hook
 }
 
-// SetSessionID sets the "session_id" field.
-func (ac *AuthCreate) SetSessionID(u uuid.UUID) *AuthCreate {
-	ac.mutation.SetSessionID(u)
-	return ac
-}
-
-// SetIP sets the "ip" field.
-func (ac *AuthCreate) SetIP(s string) *AuthCreate {
-	ac.mutation.SetIP(s)
+// SetSessionid sets the "sessionid" field.
+func (ac *AuthCreate) SetSessionid(u uuid.UUID) *AuthCreate {
+	ac.mutation.SetSessionid(u)
 	return ac
 }
 
@@ -47,6 +41,20 @@ func (ac *AuthCreate) SetNillableIsBlocked(b *bool) *AuthCreate {
 	return ac
 }
 
+// SetCreatedAt sets the "created_at" field.
+func (ac *AuthCreate) SetCreatedAt(t time.Time) *AuthCreate {
+	ac.mutation.SetCreatedAt(t)
+	return ac
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (ac *AuthCreate) SetNillableCreatedAt(t *time.Time) *AuthCreate {
+	if t != nil {
+		ac.SetCreatedAt(*t)
+	}
+	return ac
+}
+
 // SetID sets the "id" field.
 func (ac *AuthCreate) SetID(u uuid.UUID) *AuthCreate {
 	ac.mutation.SetID(u)
@@ -59,17 +67,6 @@ func (ac *AuthCreate) SetNillableID(u *uuid.UUID) *AuthCreate {
 		ac.SetID(*u)
 	}
 	return ac
-}
-
-// SetUserID sets the "user" edge to the User entity by ID.
-func (ac *AuthCreate) SetUserID(id uuid.UUID) *AuthCreate {
-	ac.mutation.SetUserID(id)
-	return ac
-}
-
-// SetUser sets the "user" edge to the User entity.
-func (ac *AuthCreate) SetUser(u *User) *AuthCreate {
-	return ac.SetUserID(u.ID)
 }
 
 // Mutation returns the AuthMutation object of the builder.
@@ -147,6 +144,10 @@ func (ac *AuthCreate) defaults() {
 		v := auth.DefaultIsBlocked
 		ac.mutation.SetIsBlocked(v)
 	}
+	if _, ok := ac.mutation.CreatedAt(); !ok {
+		v := auth.DefaultCreatedAt()
+		ac.mutation.SetCreatedAt(v)
+	}
 	if _, ok := ac.mutation.ID(); !ok {
 		v := auth.DefaultID()
 		ac.mutation.SetID(v)
@@ -155,22 +156,14 @@ func (ac *AuthCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (ac *AuthCreate) check() error {
-	if _, ok := ac.mutation.SessionID(); !ok {
-		return &ValidationError{Name: "session_id", err: errors.New(`ent: missing required field "Auth.session_id"`)}
-	}
-	if _, ok := ac.mutation.IP(); !ok {
-		return &ValidationError{Name: "ip", err: errors.New(`ent: missing required field "Auth.ip"`)}
-	}
-	if v, ok := ac.mutation.IP(); ok {
-		if err := auth.IPValidator(v); err != nil {
-			return &ValidationError{Name: "ip", err: fmt.Errorf(`ent: validator failed for field "Auth.ip": %w`, err)}
-		}
+	if _, ok := ac.mutation.Sessionid(); !ok {
+		return &ValidationError{Name: "sessionid", err: errors.New(`ent: missing required field "Auth.sessionid"`)}
 	}
 	if _, ok := ac.mutation.IsBlocked(); !ok {
 		return &ValidationError{Name: "is_blocked", err: errors.New(`ent: missing required field "Auth.is_blocked"`)}
 	}
-	if _, ok := ac.mutation.UserID(); !ok {
-		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "Auth.user"`)}
+	if _, ok := ac.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Auth.created_at"`)}
 	}
 	return nil
 }
@@ -208,21 +201,13 @@ func (ac *AuthCreate) createSpec() (*Auth, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := ac.mutation.SessionID(); ok {
+	if value, ok := ac.mutation.Sessionid(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeUUID,
 			Value:  value,
-			Column: auth.FieldSessionID,
+			Column: auth.FieldSessionid,
 		})
-		_node.SessionID = value
-	}
-	if value, ok := ac.mutation.IP(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: auth.FieldIP,
-		})
-		_node.IP = value
+		_node.Sessionid = value
 	}
 	if value, ok := ac.mutation.IsBlocked(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -232,25 +217,13 @@ func (ac *AuthCreate) createSpec() (*Auth, *sqlgraph.CreateSpec) {
 		})
 		_node.IsBlocked = value
 	}
-	if nodes := ac.mutation.UserIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   auth.UserTable,
-			Columns: []string{auth.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: user.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_node.user_authentication = &nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
+	if value, ok := ac.mutation.CreatedAt(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: auth.FieldCreatedAt,
+		})
+		_node.CreatedAt = value
 	}
 	return _node, _spec
 }

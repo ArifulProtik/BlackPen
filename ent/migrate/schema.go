@@ -11,24 +11,15 @@ var (
 	// AuthsColumns holds the columns for the "auths" table.
 	AuthsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "session_id", Type: field.TypeUUID},
-		{Name: "ip", Type: field.TypeString},
+		{Name: "sessionid", Type: field.TypeUUID},
 		{Name: "is_blocked", Type: field.TypeBool, Default: false},
-		{Name: "user_authentication", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
 	}
 	// AuthsTable holds the schema information for the "auths" table.
 	AuthsTable = &schema.Table{
 		Name:       "auths",
 		Columns:    AuthsColumns,
 		PrimaryKey: []*schema.Column{AuthsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "auths_users_authentication",
-				Columns:    []*schema.Column{AuthsColumns[4]},
-				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
-			},
-		},
 	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
@@ -38,6 +29,7 @@ var (
 		{Name: "email", Type: field.TypeString, Unique: true},
 		{Name: "profile_pic", Type: field.TypeString, Nullable: true},
 		{Name: "password", Type: field.TypeString, Size: 2147483647},
+		{Name: "created_at", Type: field.TypeTime},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
@@ -53,5 +45,4 @@ var (
 )
 
 func init() {
-	AuthsTable.ForeignKeys[0].RefTable = UsersTable
 }

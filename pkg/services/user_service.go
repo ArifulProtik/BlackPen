@@ -6,6 +6,7 @@ import (
 	"github.com/ArifulProtik/BlackPen/ent"
 	"github.com/ArifulProtik/BlackPen/ent/user"
 	"github.com/ArifulProtik/BlackPen/pkg/utils"
+	"github.com/google/uuid"
 )
 
 type UserService struct {
@@ -26,6 +27,13 @@ func (a *UserService) SaveUser(usr utils.UserInput) (*ent.User, error) {
 
 func (a *UserService) FindUserByEmail(email string) (*ent.User, error) {
 	usr, err := a.Client.Query().Where(user.EmailEQ(email)).First(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return usr, nil
+}
+func (a *UserService) FindUserByID(id uuid.UUID) (*ent.User, error) {
+	usr, err := a.Client.Query().Where(user.IDEQ(id)).First(context.Background())
 	if err != nil {
 		return nil, err
 	}

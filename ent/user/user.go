@@ -3,6 +3,8 @@
 package user
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 )
 
@@ -21,17 +23,10 @@ const (
 	FieldProfilePic = "profile_pic"
 	// FieldPassword holds the string denoting the password field in the database.
 	FieldPassword = "password"
-	// EdgeAuthentication holds the string denoting the authentication edge name in mutations.
-	EdgeAuthentication = "authentication"
+	// FieldCreatedAt holds the string denoting the created_at field in the database.
+	FieldCreatedAt = "created_at"
 	// Table holds the table name of the user in the database.
 	Table = "users"
-	// AuthenticationTable is the table that holds the authentication relation/edge.
-	AuthenticationTable = "auths"
-	// AuthenticationInverseTable is the table name for the Auth entity.
-	// It exists in this package in order to avoid circular dependency with the "auth" package.
-	AuthenticationInverseTable = "auths"
-	// AuthenticationColumn is the table column denoting the authentication relation/edge.
-	AuthenticationColumn = "user_authentication"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -42,6 +37,7 @@ var Columns = []string{
 	FieldEmail,
 	FieldProfilePic,
 	FieldPassword,
+	FieldCreatedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -63,6 +59,8 @@ var (
 	EmailValidator func(string) error
 	// PasswordValidator is a validator for the "password" field. It is called by the builders before save.
 	PasswordValidator func(string) error
+	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
+	DefaultCreatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )

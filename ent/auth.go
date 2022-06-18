@@ -5,10 +5,10 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/ArifulProtik/BlackPen/ent/auth"
-	"github.com/ArifulProtik/BlackPen/ent/user"
 	"github.com/google/uuid"
 )
 
@@ -17,39 +17,12 @@ type Auth struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
-	// SessionID holds the value of the "session_id" field.
-	SessionID uuid.UUID `json:"session_id,omitempty"`
-	// IP holds the value of the "ip" field.
-	IP string `json:"ip,omitempty"`
+	// Sessionid holds the value of the "sessionid" field.
+	Sessionid uuid.UUID `json:"sessionid,omitempty"`
 	// IsBlocked holds the value of the "is_blocked" field.
 	IsBlocked bool `json:"is_blocked,omitempty"`
-	// Edges holds the relations/edges for other nodes in the graph.
-	// The values are being populated by the AuthQuery when eager-loading is set.
-	Edges               AuthEdges `json:"edges"`
-	user_authentication *uuid.UUID
-}
-
-// AuthEdges holds the relations/edges for other nodes in the graph.
-type AuthEdges struct {
-	// User holds the value of the user edge.
-	User *User `json:"user,omitempty"`
-	// loadedTypes holds the information for reporting if a
-	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
-}
-
-// UserOrErr returns the User value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e AuthEdges) UserOrErr() (*User, error) {
-	if e.loadedTypes[0] {
-		if e.User == nil {
-			// The edge user was loaded in eager-loading,
-			// but was not found.
-			return nil, &NotFoundError{label: user.Label}
-		}
-		return e.User, nil
-	}
-	return nil, &NotLoadedError{edge: "user"}
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt time.Time `json:"created_at,omitempty"`
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -59,12 +32,10 @@ func (*Auth) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case auth.FieldIsBlocked:
 			values[i] = new(sql.NullBool)
-		case auth.FieldIP:
-			values[i] = new(sql.NullString)
-		case auth.FieldID, auth.FieldSessionID:
+		case auth.FieldCreatedAt:
+			values[i] = new(sql.NullTime)
+		case auth.FieldID, auth.FieldSessionid:
 			values[i] = new(uuid.UUID)
-		case auth.ForeignKeys[0]: // user_authentication
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Auth", columns[i])
 		}
@@ -86,17 +57,11 @@ func (a *Auth) assignValues(columns []string, values []interface{}) error {
 			} else if value != nil {
 				a.ID = *value
 			}
-		case auth.FieldSessionID:
+		case auth.FieldSessionid:
 			if value, ok := values[i].(*uuid.UUID); !ok {
-				return fmt.Errorf("unexpected type %T for field session_id", values[i])
+				return fmt.Errorf("unexpected type %T for field sessionid", values[i])
 			} else if value != nil {
-				a.SessionID = *value
-			}
-		case auth.FieldIP:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field ip", values[i])
-			} else if value.Valid {
-				a.IP = value.String
+				a.Sessionid = *value
 			}
 		case auth.FieldIsBlocked:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -104,21 +69,15 @@ func (a *Auth) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				a.IsBlocked = value.Bool
 			}
-		case auth.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field user_authentication", values[i])
+		case auth.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				a.user_authentication = new(uuid.UUID)
-				*a.user_authentication = *value.S.(*uuid.UUID)
+				a.CreatedAt = value.Time
 			}
 		}
 	}
 	return nil
-}
-
-// QueryUser queries the "user" edge of the Auth entity.
-func (a *Auth) QueryUser() *UserQuery {
-	return (&AuthClient{config: a.config}).QueryUser(a)
 }
 
 // Update returns a builder for updating this Auth.
@@ -144,12 +103,12 @@ func (a *Auth) String() string {
 	var builder strings.Builder
 	builder.WriteString("Auth(")
 	builder.WriteString(fmt.Sprintf("id=%v", a.ID))
-	builder.WriteString(", session_id=")
-	builder.WriteString(fmt.Sprintf("%v", a.SessionID))
-	builder.WriteString(", ip=")
-	builder.WriteString(a.IP)
+	builder.WriteString(", sessionid=")
+	builder.WriteString(fmt.Sprintf("%v", a.Sessionid))
 	builder.WriteString(", is_blocked=")
 	builder.WriteString(fmt.Sprintf("%v", a.IsBlocked))
+	builder.WriteString(", created_at=")
+	builder.WriteString(a.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

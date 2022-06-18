@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/ArifulProtik/BlackPen/ent"
 	"github.com/ArifulProtik/BlackPen/pkg/auth"
 	"github.com/ArifulProtik/BlackPen/pkg/services"
 	"github.com/ArifulProtik/BlackPen/pkg/utils"
@@ -12,6 +13,7 @@ import (
 
 type AuthController struct {
 	UserService *services.UserService
+	AuthService *services.AuthService
 	AuthToken   *auth.Token
 }
 
@@ -72,11 +74,19 @@ func (a *AuthController) Signin(e echo.Context) error {
 				})
 			}
 		}
+		a.AuthService.DeleteSessionByID(user.ID)
+
+		newSession, err := a.AuthService.CreateSession(user.ID)
+		if err != nil {
+			return e.JSON(500, err)
+		}
+		_, rfToken := a.AuthToken.RfTokenWithSession(newSession.ID)
 
 		_, token := a.AuthToken.TokenWithUser(user.ID)
 
 		return e.JSON(http.StatusAccepted, utils.SuccessResponse{
-			AccessToken: &token,
+			AccessToken:  &token,
+			RefreshToken: &rfToken,
 			Data: echo.Map{
 				"user": user,
 			},
@@ -86,4 +96,44 @@ func (a *AuthController) Signin(e echo.Context) error {
 	return e.JSON(http.StatusBadRequest, utils.ErrorResponse{
 		Msg: "OOps not Allowed",
 	})
+}
+
+func (a *AuthController) Refresh(e echo.Context) error {
+	token := e.Request().Header.Get("token")
+	if token != "" {
+		err, id := a.AuthToken.VerifyToken(token)
+		if err != nil {
+			return e.JSON(http.StatusUnauthorized, utils.ErrorResponse{
+				Msg: "Invalid Token",
+			})
+		}
+
+		session, err := a.AuthService.GetSessionByID(id)
+
+		if session.IsBlocked != true {
+			_, newtoken := a.AuthToken.TokenWithUser(session.Sessionid)
+			return e.JSON(http.StatusAccepted, utils.SuccessResponse{
+				AccessToken: &newtoken,
+			})
+		}
+		return e.JSON(http.StatusAccepted, utils.ErrorResponse{
+			Msg: "Invalid Token",
+		})
+	}
+	return e.JSON(http.StatusUnauthorized, utils.ErrorResponse{
+		Msg: "Status Unauthorized",
+	})
+}
+func (a *AuthController) Logout(e echo.Context) error {
+	id := e.Get("id").(*ent.User)
+	err := a.AuthService.UpdateSession(id.ID)
+	if err != nil {
+		return e.JSON(http.StatusUnauthorized, utils.ErrorResponse{
+			Msg: "Unauthorized",
+		})
+	}
+	return e.JSON(http.StatusAccepted, echo.Map{
+		"msg": "logged out",
+	})
+
 }

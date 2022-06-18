@@ -13,7 +13,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/ArifulProtik/BlackPen/ent/auth"
 	"github.com/ArifulProtik/BlackPen/ent/predicate"
-	"github.com/ArifulProtik/BlackPen/ent/user"
 	"github.com/google/uuid"
 )
 
@@ -26,9 +25,6 @@ type AuthQuery struct {
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.Auth
-	// eager-loading edges.
-	withUser *UserQuery
-	withFKs  bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -63,28 +59,6 @@ func (aq *AuthQuery) Unique(unique bool) *AuthQuery {
 func (aq *AuthQuery) Order(o ...OrderFunc) *AuthQuery {
 	aq.order = append(aq.order, o...)
 	return aq
-}
-
-// QueryUser chains the current query on the "user" edge.
-func (aq *AuthQuery) QueryUser() *UserQuery {
-	query := &UserQuery{config: aq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := aq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := aq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(auth.Table, auth.FieldID, selector),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, auth.UserTable, auth.UserColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
 }
 
 // First returns the first Auth entity from the query.
@@ -268,23 +242,11 @@ func (aq *AuthQuery) Clone() *AuthQuery {
 		offset:     aq.offset,
 		order:      append([]OrderFunc{}, aq.order...),
 		predicates: append([]predicate.Auth{}, aq.predicates...),
-		withUser:   aq.withUser.Clone(),
 		// clone intermediate query.
 		sql:    aq.sql.Clone(),
 		path:   aq.path,
 		unique: aq.unique,
 	}
-}
-
-// WithUser tells the query-builder to eager-load the nodes that are connected to
-// the "user" edge. The optional arguments are used to configure the query builder of the edge.
-func (aq *AuthQuery) WithUser(opts ...func(*UserQuery)) *AuthQuery {
-	query := &UserQuery{config: aq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	aq.withUser = query
-	return aq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -293,12 +255,12 @@ func (aq *AuthQuery) WithUser(opts ...func(*UserQuery)) *AuthQuery {
 // Example:
 //
 //	var v []struct {
-//		SessionID uuid.UUID `json:"session_id,omitempty"`
+//		Sessionid uuid.UUID `json:"sessionid,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Auth.Query().
-//		GroupBy(auth.FieldSessionID).
+//		GroupBy(auth.FieldSessionid).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 //
@@ -320,11 +282,11 @@ func (aq *AuthQuery) GroupBy(field string, fields ...string) *AuthGroupBy {
 // Example:
 //
 //	var v []struct {
-//		SessionID uuid.UUID `json:"session_id,omitempty"`
+//		Sessionid uuid.UUID `json:"sessionid,omitempty"`
 //	}
 //
 //	client.Auth.Query().
-//		Select(auth.FieldSessionID).
+//		Select(auth.FieldSessionid).
 //		Scan(ctx, &v)
 //
 func (aq *AuthQuery) Select(fields ...string) *AuthSelect {
@@ -350,19 +312,9 @@ func (aq *AuthQuery) prepareQuery(ctx context.Context) error {
 
 func (aq *AuthQuery) sqlAll(ctx context.Context) ([]*Auth, error) {
 	var (
-		nodes       = []*Auth{}
-		withFKs     = aq.withFKs
-		_spec       = aq.querySpec()
-		loadedTypes = [1]bool{
-			aq.withUser != nil,
-		}
+		nodes = []*Auth{}
+		_spec = aq.querySpec()
 	)
-	if aq.withUser != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, auth.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		node := &Auth{config: aq.config}
 		nodes = append(nodes, node)
@@ -373,7 +325,6 @@ func (aq *AuthQuery) sqlAll(ctx context.Context) ([]*Auth, error) {
 			return fmt.Errorf("ent: Assign called without calling ScanValues")
 		}
 		node := nodes[len(nodes)-1]
-		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if err := sqlgraph.QueryNodes(ctx, aq.driver, _spec); err != nil {
@@ -382,36 +333,6 @@ func (aq *AuthQuery) sqlAll(ctx context.Context) ([]*Auth, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-
-	if query := aq.withUser; query != nil {
-		ids := make([]uuid.UUID, 0, len(nodes))
-		nodeids := make(map[uuid.UUID][]*Auth)
-		for i := range nodes {
-			if nodes[i].user_authentication == nil {
-				continue
-			}
-			fk := *nodes[i].user_authentication
-			if _, ok := nodeids[fk]; !ok {
-				ids = append(ids, fk)
-			}
-			nodeids[fk] = append(nodeids[fk], nodes[i])
-		}
-		query.Where(user.IDIn(ids...))
-		neighbors, err := query.All(ctx)
-		if err != nil {
-			return nil, err
-		}
-		for _, n := range neighbors {
-			nodes, ok := nodeids[n.ID]
-			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "user_authentication" returned %v`, n.ID)
-			}
-			for i := range nodes {
-				nodes[i].Edges.User = n
-			}
-		}
-	}
-
 	return nodes, nil
 }
 
