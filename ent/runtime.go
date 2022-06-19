@@ -7,6 +7,7 @@ import (
 
 	"github.com/ArifulProtik/BlackPen/ent/auth"
 	"github.com/ArifulProtik/BlackPen/ent/comment"
+	"github.com/ArifulProtik/BlackPen/ent/love"
 	"github.com/ArifulProtik/BlackPen/ent/notes"
 	"github.com/ArifulProtik/BlackPen/ent/schema"
 	"github.com/ArifulProtik/BlackPen/ent/user"
@@ -45,6 +46,12 @@ func init() {
 	commentDescID := commentFields[0].Descriptor()
 	// comment.DefaultID holds the default value on creation for the id field.
 	comment.DefaultID = commentDescID.Default.(func() uuid.UUID)
+	loveFields := schema.Love{}.Fields()
+	_ = loveFields
+	// loveDescCreatedAt is the schema descriptor for created_at field.
+	loveDescCreatedAt := loveFields[1].Descriptor()
+	// love.DefaultCreatedAt holds the default value on creation for the created_at field.
+	love.DefaultCreatedAt = loveDescCreatedAt.Default.(func() time.Time)
 	notesFields := schema.Notes{}.Fields()
 	_ = notesFields
 	// notesDescTitle is the schema descriptor for title field.

@@ -12,6 +12,9 @@ type Auth func(*sql.Selector)
 // Comment is the predicate function for comment builders.
 type Comment func(*sql.Selector)
 
+// Love is the predicate function for love builders.
+type Love func(*sql.Selector)
+
 // Notes is the predicate function for notes builders.
 type Notes func(*sql.Selector)
 

@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/ArifulProtik/BlackPen/ent/auth"
 	"github.com/ArifulProtik/BlackPen/ent/comment"
+	"github.com/ArifulProtik/BlackPen/ent/love"
 	"github.com/ArifulProtik/BlackPen/ent/notes"
 	"github.com/ArifulProtik/BlackPen/ent/user"
 )
@@ -34,6 +35,7 @@ func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
 		auth.Table:    auth.ValidColumn,
 		comment.Table: comment.ValidColumn,
+		love.Table:    love.ValidColumn,
 		notes.Table:   notes.ValidColumn,
 		user.Table:    user.ValidColumn,
 	}

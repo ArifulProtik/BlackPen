@@ -12,8 +12,9 @@ import (
 )
 
 type NoteController struct {
-	Service     *services.NoteService
-	UserService *services.UserService
+	Service         *services.NoteService
+	UserService     *services.UserService
+	ReactionService *services.ReactionService
 }
 
 func (n *NoteController) CreateNote(c echo.Context) error {
@@ -120,7 +121,18 @@ func (n *NoteController) GetSingleNote(c echo.Context) error {
 			Msg: "Not Found",
 		})
 	}
-	return c.JSON(http.StatusOK, note)
+	type NoteResp struct {
+		LikeCount int `json:"likes"`
+		Likes     []*ent.Love
+		Note      *ent.Notes `json:"note"`
+	}
+	likes, err := n.ReactionService.GetReactions(note.ID)
+
+	return c.JSON(http.StatusOK, &NoteResp{
+		LikeCount: len(likes),
+		Likes:     likes,
+		Note:      note,
+	})
 }
 
 func (n *NoteController) MyNotes(c echo.Context) error {

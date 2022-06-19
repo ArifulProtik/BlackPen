@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/ArifulProtik/BlackPen/ent/comment"
+	"github.com/ArifulProtik/BlackPen/ent/love"
 	"github.com/ArifulProtik/BlackPen/ent/notes"
 	"github.com/ArifulProtik/BlackPen/ent/predicate"
 	"github.com/ArifulProtik/BlackPen/ent/user"
@@ -31,6 +32,7 @@ type UserQuery struct {
 	// eager-loading edges.
 	withNotess   *NotesQuery
 	withComments *CommentQuery
+	withLoves    *LoveQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -104,6 +106,28 @@ func (uq *UserQuery) QueryComments() *CommentQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(comment.Table, comment.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.CommentsTable, user.CommentsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryLoves chains the current query on the "loves" edge.
+func (uq *UserQuery) QueryLoves() *LoveQuery {
+	query := &LoveQuery{config: uq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(love.Table, love.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, user.LovesTable, user.LovesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -294,6 +318,7 @@ func (uq *UserQuery) Clone() *UserQuery {
 		predicates:   append([]predicate.User{}, uq.predicates...),
 		withNotess:   uq.withNotess.Clone(),
 		withComments: uq.withComments.Clone(),
+		withLoves:    uq.withLoves.Clone(),
 		// clone intermediate query.
 		sql:    uq.sql.Clone(),
 		path:   uq.path,
@@ -320,6 +345,17 @@ func (uq *UserQuery) WithComments(opts ...func(*CommentQuery)) *UserQuery {
 		opt(query)
 	}
 	uq.withComments = query
+	return uq
+}
+
+// WithLoves tells the query-builder to eager-load the nodes that are connected to
+// the "loves" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithLoves(opts ...func(*LoveQuery)) *UserQuery {
+	query := &LoveQuery{config: uq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withLoves = query
 	return uq
 }
 
@@ -388,9 +424,10 @@ func (uq *UserQuery) sqlAll(ctx context.Context) ([]*User, error) {
 	var (
 		nodes       = []*User{}
 		_spec       = uq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			uq.withNotess != nil,
 			uq.withComments != nil,
+			uq.withLoves != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
@@ -468,6 +505,34 @@ func (uq *UserQuery) sqlAll(ctx context.Context) ([]*User, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "user_comments" returned %v for node %v`, *fk, n.ID)
 			}
 			node.Edges.Comments = append(node.Edges.Comments, n)
+		}
+	}
+
+	if query := uq.withLoves; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[uuid.UUID]*User)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+		}
+		query.withFKs = true
+		query.Where(predicate.Love(func(s *sql.Selector) {
+			s.Where(sql.InValues(user.LovesColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.user_loves
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "user_loves" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "user_loves" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Loves = n
 		}
 	}
 

@@ -5,10 +5,11 @@ import (
 )
 
 type Service struct {
-	Auth    *AuthService
-	User    *UserService
-	Note    *NoteService
-	Comment *CommentService
+	Auth     *AuthService
+	User     *UserService
+	Note     *NoteService
+	Comment  *CommentService
+	Reaction *ReactionService
 }
 
 func New(dbclient *ent.Client) *Service {
@@ -24,6 +25,9 @@ func New(dbclient *ent.Client) *Service {
 		},
 		Comment: &CommentService{
 			Client: dbclient.Comment,
+		},
+		Reaction: &ReactionService{
+			Client: dbclient.Love,
 		},
 	}
 }

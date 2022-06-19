@@ -35,6 +35,19 @@ func (f CommentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return f(ctx, mv)
 }
 
+// The LoveFunc type is an adapter to allow the use of ordinary
+// function as Love mutator.
+type LoveFunc func(context.Context, *ent.LoveMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f LoveFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.LoveMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.LoveMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The NotesFunc type is an adapter to allow the use of ordinary
 // function as Notes mutator.
 type NotesFunc func(context.Context, *ent.NotesMutation) (ent.Value, error)

@@ -26,6 +26,7 @@ type config struct {
 type hooks struct {
 	Auth    []ent.Hook
 	Comment []ent.Hook
+	Love    []ent.Hook
 	Notes   []ent.Hook
 	User    []ent.Hook
 }

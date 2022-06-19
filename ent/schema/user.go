@@ -32,5 +32,6 @@ func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("notess", Notes.Type),
 		edge.To("comments", Comment.Type),
+		edge.To("loves", Love.Type).Unique(),
 	}
 }

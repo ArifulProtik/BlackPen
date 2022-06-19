@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/ArifulProtik/BlackPen/ent/love"
 	"github.com/ArifulProtik/BlackPen/ent/user"
 	"github.com/google/uuid"
 )
@@ -40,9 +41,11 @@ type UserEdges struct {
 	Notess []*Notes `json:"notess,omitempty"`
 	// Comments holds the value of the comments edge.
 	Comments []*Comment `json:"comments,omitempty"`
+	// Loves holds the value of the loves edge.
+	Loves *Love `json:"loves,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // NotessOrErr returns the Notess value or an error if the edge
@@ -61,6 +64,20 @@ func (e UserEdges) CommentsOrErr() ([]*Comment, error) {
 		return e.Comments, nil
 	}
 	return nil, &NotLoadedError{edge: "comments"}
+}
+
+// LovesOrErr returns the Loves value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UserEdges) LovesOrErr() (*Love, error) {
+	if e.loadedTypes[2] {
+		if e.Loves == nil {
+			// The edge loves was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: love.Label}
+		}
+		return e.Loves, nil
+	}
+	return nil, &NotLoadedError{edge: "loves"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -144,6 +161,11 @@ func (u *User) QueryNotess() *NotesQuery {
 // QueryComments queries the "comments" edge of the User entity.
 func (u *User) QueryComments() *CommentQuery {
 	return (&UserClient{config: u.config}).QueryComments(u)
+}
+
+// QueryLoves queries the "loves" edge of the User entity.
+func (u *User) QueryLoves() *LoveQuery {
+	return (&UserClient{config: u.config}).QueryLoves(u)
 }
 
 // Update returns a builder for updating this User.

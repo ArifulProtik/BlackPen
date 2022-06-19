@@ -12,6 +12,7 @@ import (
 
 	"github.com/ArifulProtik/BlackPen/ent/auth"
 	"github.com/ArifulProtik/BlackPen/ent/comment"
+	"github.com/ArifulProtik/BlackPen/ent/love"
 	"github.com/ArifulProtik/BlackPen/ent/notes"
 	"github.com/ArifulProtik/BlackPen/ent/user"
 
@@ -29,6 +30,8 @@ type Client struct {
 	Auth *AuthClient
 	// Comment is the client for interacting with the Comment builders.
 	Comment *CommentClient
+	// Love is the client for interacting with the Love builders.
+	Love *LoveClient
 	// Notes is the client for interacting with the Notes builders.
 	Notes *NotesClient
 	// User is the client for interacting with the User builders.
@@ -48,6 +51,7 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Auth = NewAuthClient(c.config)
 	c.Comment = NewCommentClient(c.config)
+	c.Love = NewLoveClient(c.config)
 	c.Notes = NewNotesClient(c.config)
 	c.User = NewUserClient(c.config)
 }
@@ -85,6 +89,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		config:  cfg,
 		Auth:    NewAuthClient(cfg),
 		Comment: NewCommentClient(cfg),
+		Love:    NewLoveClient(cfg),
 		Notes:   NewNotesClient(cfg),
 		User:    NewUserClient(cfg),
 	}, nil
@@ -108,6 +113,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		config:  cfg,
 		Auth:    NewAuthClient(cfg),
 		Comment: NewCommentClient(cfg),
+		Love:    NewLoveClient(cfg),
 		Notes:   NewNotesClient(cfg),
 		User:    NewUserClient(cfg),
 	}, nil
@@ -141,6 +147,7 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	c.Auth.Use(hooks...)
 	c.Comment.Use(hooks...)
+	c.Love.Use(hooks...)
 	c.Notes.Use(hooks...)
 	c.User.Use(hooks...)
 }
@@ -339,6 +346,112 @@ func (c *CommentClient) QueryUser(co *Comment) *UserQuery {
 // Hooks returns the client hooks.
 func (c *CommentClient) Hooks() []Hook {
 	return c.hooks.Comment
+}
+
+// LoveClient is a client for the Love schema.
+type LoveClient struct {
+	config
+}
+
+// NewLoveClient returns a client for the Love from the given config.
+func NewLoveClient(c config) *LoveClient {
+	return &LoveClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `love.Hooks(f(g(h())))`.
+func (c *LoveClient) Use(hooks ...Hook) {
+	c.hooks.Love = append(c.hooks.Love, hooks...)
+}
+
+// Create returns a create builder for Love.
+func (c *LoveClient) Create() *LoveCreate {
+	mutation := newLoveMutation(c.config, OpCreate)
+	return &LoveCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Love entities.
+func (c *LoveClient) CreateBulk(builders ...*LoveCreate) *LoveCreateBulk {
+	return &LoveCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Love.
+func (c *LoveClient) Update() *LoveUpdate {
+	mutation := newLoveMutation(c.config, OpUpdate)
+	return &LoveUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *LoveClient) UpdateOne(l *Love) *LoveUpdateOne {
+	mutation := newLoveMutation(c.config, OpUpdateOne, withLove(l))
+	return &LoveUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *LoveClient) UpdateOneID(id int) *LoveUpdateOne {
+	mutation := newLoveMutation(c.config, OpUpdateOne, withLoveID(id))
+	return &LoveUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Love.
+func (c *LoveClient) Delete() *LoveDelete {
+	mutation := newLoveMutation(c.config, OpDelete)
+	return &LoveDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *LoveClient) DeleteOne(l *Love) *LoveDeleteOne {
+	return c.DeleteOneID(l.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *LoveClient) DeleteOneID(id int) *LoveDeleteOne {
+	builder := c.Delete().Where(love.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &LoveDeleteOne{builder}
+}
+
+// Query returns a query builder for Love.
+func (c *LoveClient) Query() *LoveQuery {
+	return &LoveQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Love entity by its id.
+func (c *LoveClient) Get(ctx context.Context, id int) (*Love, error) {
+	return c.Query().Where(love.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *LoveClient) GetX(ctx context.Context, id int) *Love {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a Love.
+func (c *LoveClient) QueryUser(l *Love) *UserQuery {
+	query := &UserQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := l.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(love.Table, love.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, love.UserTable, love.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(l.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *LoveClient) Hooks() []Hook {
+	return c.hooks.Love
 }
 
 // NotesClient is a client for the Notes schema.
@@ -557,6 +670,22 @@ func (c *UserClient) QueryComments(u *User) *CommentQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(comment.Table, comment.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.CommentsTable, user.CommentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryLoves queries the loves edge of a User.
+func (c *UserClient) QueryLoves(u *User) *LoveQuery {
+	query := &LoveQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(love.Table, love.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, user.LovesTable, user.LovesColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/ArifulProtik/BlackPen/ent/comment"
+	"github.com/ArifulProtik/BlackPen/ent/love"
 	"github.com/ArifulProtik/BlackPen/ent/notes"
 	"github.com/ArifulProtik/BlackPen/ent/user"
 	"github.com/google/uuid"
@@ -117,6 +118,25 @@ func (uc *UserCreate) AddComments(c ...*Comment) *UserCreate {
 		ids[i] = c[i].ID
 	}
 	return uc.AddCommentIDs(ids...)
+}
+
+// SetLovesID sets the "loves" edge to the Love entity by ID.
+func (uc *UserCreate) SetLovesID(id int) *UserCreate {
+	uc.mutation.SetLovesID(id)
+	return uc
+}
+
+// SetNillableLovesID sets the "loves" edge to the Love entity by ID if the given value is not nil.
+func (uc *UserCreate) SetNillableLovesID(id *int) *UserCreate {
+	if id != nil {
+		uc = uc.SetLovesID(*id)
+	}
+	return uc
+}
+
+// SetLoves sets the "loves" edge to the Love entity.
+func (uc *UserCreate) SetLoves(l *Love) *UserCreate {
+	return uc.SetLovesID(l.ID)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -351,6 +371,25 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: comment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.LovesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.LovesTable,
+			Columns: []string{user.LovesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: love.FieldID,
 				},
 			},
 		}

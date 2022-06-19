@@ -27,6 +27,7 @@ func InitRouter(r *echo.Group, s *services.Service, auth *auth.Token, key string
 
 	r.POST("/comment/create", handler.Comment.CreateComment)
 	r.DELETE("/comment/:id", handler.Comment.DeleteComment)
-
+	r.GET("/reaction/:noteid", handler.Reaction.CreateReaction)
+	r.DELETE("/reaction/delete/:id", handler.Reaction.DeleteReaction)
 	r.GET("/logout", handler.Auth.Logout)
 }

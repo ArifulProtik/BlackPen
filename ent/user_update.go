@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/ArifulProtik/BlackPen/ent/comment"
+	"github.com/ArifulProtik/BlackPen/ent/love"
 	"github.com/ArifulProtik/BlackPen/ent/notes"
 	"github.com/ArifulProtik/BlackPen/ent/predicate"
 	"github.com/ArifulProtik/BlackPen/ent/user"
@@ -119,6 +120,25 @@ func (uu *UserUpdate) AddComments(c ...*Comment) *UserUpdate {
 	return uu.AddCommentIDs(ids...)
 }
 
+// SetLovesID sets the "loves" edge to the Love entity by ID.
+func (uu *UserUpdate) SetLovesID(id int) *UserUpdate {
+	uu.mutation.SetLovesID(id)
+	return uu
+}
+
+// SetNillableLovesID sets the "loves" edge to the Love entity by ID if the given value is not nil.
+func (uu *UserUpdate) SetNillableLovesID(id *int) *UserUpdate {
+	if id != nil {
+		uu = uu.SetLovesID(*id)
+	}
+	return uu
+}
+
+// SetLoves sets the "loves" edge to the Love entity.
+func (uu *UserUpdate) SetLoves(l *Love) *UserUpdate {
+	return uu.SetLovesID(l.ID)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
@@ -164,6 +184,12 @@ func (uu *UserUpdate) RemoveComments(c ...*Comment) *UserUpdate {
 		ids[i] = c[i].ID
 	}
 	return uu.RemoveCommentIDs(ids...)
+}
+
+// ClearLoves clears the "loves" edge to the Love entity.
+func (uu *UserUpdate) ClearLoves() *UserUpdate {
+	uu.mutation.ClearLoves()
+	return uu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -425,6 +451,41 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if uu.mutation.LovesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.LovesTable,
+			Columns: []string{user.LovesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: love.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.LovesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.LovesTable,
+			Columns: []string{user.LovesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: love.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -532,6 +593,25 @@ func (uuo *UserUpdateOne) AddComments(c ...*Comment) *UserUpdateOne {
 	return uuo.AddCommentIDs(ids...)
 }
 
+// SetLovesID sets the "loves" edge to the Love entity by ID.
+func (uuo *UserUpdateOne) SetLovesID(id int) *UserUpdateOne {
+	uuo.mutation.SetLovesID(id)
+	return uuo
+}
+
+// SetNillableLovesID sets the "loves" edge to the Love entity by ID if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableLovesID(id *int) *UserUpdateOne {
+	if id != nil {
+		uuo = uuo.SetLovesID(*id)
+	}
+	return uuo
+}
+
+// SetLoves sets the "loves" edge to the Love entity.
+func (uuo *UserUpdateOne) SetLoves(l *Love) *UserUpdateOne {
+	return uuo.SetLovesID(l.ID)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
@@ -577,6 +657,12 @@ func (uuo *UserUpdateOne) RemoveComments(c ...*Comment) *UserUpdateOne {
 		ids[i] = c[i].ID
 	}
 	return uuo.RemoveCommentIDs(ids...)
+}
+
+// ClearLoves clears the "loves" edge to the Love entity.
+func (uuo *UserUpdateOne) ClearLoves() *UserUpdateOne {
+	uuo.mutation.ClearLoves()
+	return uuo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -854,6 +940,41 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: comment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.LovesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.LovesTable,
+			Columns: []string{user.LovesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: love.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.LovesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.LovesTable,
+			Columns: []string{user.LovesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: love.FieldID,
 				},
 			},
 		}

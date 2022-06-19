@@ -29,6 +29,8 @@ const (
 	EdgeNotess = "notess"
 	// EdgeComments holds the string denoting the comments edge name in mutations.
 	EdgeComments = "comments"
+	// EdgeLoves holds the string denoting the loves edge name in mutations.
+	EdgeLoves = "loves"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// NotessTable is the table that holds the notess relation/edge.
@@ -45,6 +47,13 @@ const (
 	CommentsInverseTable = "comments"
 	// CommentsColumn is the table column denoting the comments relation/edge.
 	CommentsColumn = "user_comments"
+	// LovesTable is the table that holds the loves relation/edge.
+	LovesTable = "loves"
+	// LovesInverseTable is the table name for the Love entity.
+	// It exists in this package in order to avoid circular dependency with the "love" package.
+	LovesInverseTable = "loves"
+	// LovesColumn is the table column denoting the loves relation/edge.
+	LovesColumn = "user_loves"
 )
 
 // Columns holds all SQL columns for user fields.

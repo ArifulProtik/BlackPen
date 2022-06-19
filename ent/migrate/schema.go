@@ -43,6 +43,27 @@ var (
 			},
 		},
 	}
+	// LovesColumns holds the columns for the "loves" table.
+	LovesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "noteid", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "user_loves", Type: field.TypeUUID, Unique: true, Nullable: true},
+	}
+	// LovesTable holds the schema information for the "loves" table.
+	LovesTable = &schema.Table{
+		Name:       "loves",
+		Columns:    LovesColumns,
+		PrimaryKey: []*schema.Column{LovesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "loves_users_loves",
+				Columns:    []*schema.Column{LovesColumns[3]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// NotesColumns holds the columns for the "notes" table.
 	NotesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -89,6 +110,7 @@ var (
 	Tables = []*schema.Table{
 		AuthsTable,
 		CommentsTable,
+		LovesTable,
 		NotesTable,
 		UsersTable,
 	}
@@ -96,5 +118,6 @@ var (
 
 func init() {
 	CommentsTable.ForeignKeys[0].RefTable = UsersTable
+	LovesTable.ForeignKeys[0].RefTable = UsersTable
 	NotesTable.ForeignKeys[0].RefTable = UsersTable
 }
