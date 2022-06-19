@@ -9,6 +9,8 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/ArifulProtik/BlackPen/ent/auth"
+	"github.com/ArifulProtik/BlackPen/ent/comment"
+	"github.com/ArifulProtik/BlackPen/ent/notes"
 	"github.com/ArifulProtik/BlackPen/ent/user"
 )
 
@@ -30,8 +32,10 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
-		auth.Table: auth.ValidColumn,
-		user.Table: user.ValidColumn,
+		auth.Table:    auth.ValidColumn,
+		comment.Table: comment.ValidColumn,
+		notes.Table:   notes.ValidColumn,
+		user.Table:    user.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

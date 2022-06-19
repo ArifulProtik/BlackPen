@@ -36,7 +36,7 @@ func (a *AuthController) IsAuth(next echo.HandlerFunc) echo.HandlerFunc {
 			})
 		}
 		user, _ := a.UserService.FindUserByID(session.Sessionid)
-		c.Set("id", user)
+		c.Set("user", user)
 		return next(c)
 
 	}

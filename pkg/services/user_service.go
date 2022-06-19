@@ -39,3 +39,11 @@ func (a *UserService) FindUserByID(id uuid.UUID) (*ent.User, error) {
 	}
 	return usr, nil
 }
+
+func (a *UserService) FindUserByUsername(usrname string) (*ent.User, error) {
+	usr, err := a.Client.Query().Where(user.UsernameEQ(usrname)).First(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return usr, nil
+}

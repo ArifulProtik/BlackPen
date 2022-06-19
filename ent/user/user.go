@@ -25,8 +25,26 @@ const (
 	FieldPassword = "password"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
+	// EdgeNotess holds the string denoting the notess edge name in mutations.
+	EdgeNotess = "notess"
+	// EdgeComments holds the string denoting the comments edge name in mutations.
+	EdgeComments = "comments"
 	// Table holds the table name of the user in the database.
 	Table = "users"
+	// NotessTable is the table that holds the notess relation/edge.
+	NotessTable = "notes"
+	// NotessInverseTable is the table name for the Notes entity.
+	// It exists in this package in order to avoid circular dependency with the "notes" package.
+	NotessInverseTable = "notes"
+	// NotessColumn is the table column denoting the notess relation/edge.
+	NotessColumn = "user_notess"
+	// CommentsTable is the table that holds the comments relation/edge.
+	CommentsTable = "comments"
+	// CommentsInverseTable is the table name for the Comment entity.
+	// It exists in this package in order to avoid circular dependency with the "comment" package.
+	CommentsInverseTable = "comments"
+	// CommentsColumn is the table column denoting the comments relation/edge.
+	CommentsColumn = "user_comments"
 )
 
 // Columns holds all SQL columns for user fields.

@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/ArifulProtik/BlackPen/ent/auth"
+	"github.com/ArifulProtik/BlackPen/ent/comment"
+	"github.com/ArifulProtik/BlackPen/ent/notes"
 	"github.com/ArifulProtik/BlackPen/ent/schema"
 	"github.com/ArifulProtik/BlackPen/ent/user"
 	"github.com/google/uuid"
@@ -29,6 +31,46 @@ func init() {
 	authDescID := authFields[0].Descriptor()
 	// auth.DefaultID holds the default value on creation for the id field.
 	auth.DefaultID = authDescID.Default.(func() uuid.UUID)
+	commentFields := schema.Comment{}.Fields()
+	_ = commentFields
+	// commentDescBody is the schema descriptor for body field.
+	commentDescBody := commentFields[1].Descriptor()
+	// comment.BodyValidator is a validator for the "body" field. It is called by the builders before save.
+	comment.BodyValidator = commentDescBody.Validators[0].(func(string) error)
+	// commentDescCreatedAt is the schema descriptor for created_at field.
+	commentDescCreatedAt := commentFields[3].Descriptor()
+	// comment.DefaultCreatedAt holds the default value on creation for the created_at field.
+	comment.DefaultCreatedAt = commentDescCreatedAt.Default.(time.Time)
+	// commentDescID is the schema descriptor for id field.
+	commentDescID := commentFields[0].Descriptor()
+	// comment.DefaultID holds the default value on creation for the id field.
+	comment.DefaultID = commentDescID.Default.(func() uuid.UUID)
+	notesFields := schema.Notes{}.Fields()
+	_ = notesFields
+	// notesDescTitle is the schema descriptor for title field.
+	notesDescTitle := notesFields[1].Descriptor()
+	// notes.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	notes.TitleValidator = notesDescTitle.Validators[0].(func(string) error)
+	// notesDescBody is the schema descriptor for body field.
+	notesDescBody := notesFields[2].Descriptor()
+	// notes.BodyValidator is a validator for the "body" field. It is called by the builders before save.
+	notes.BodyValidator = notesDescBody.Validators[0].(func(string) error)
+	// notesDescSlug is the schema descriptor for slug field.
+	notesDescSlug := notesFields[4].Descriptor()
+	// notes.SlugValidator is a validator for the "slug" field. It is called by the builders before save.
+	notes.SlugValidator = notesDescSlug.Validators[0].(func(string) error)
+	// notesDescFImage is the schema descriptor for f_image field.
+	notesDescFImage := notesFields[5].Descriptor()
+	// notes.FImageValidator is a validator for the "f_image" field. It is called by the builders before save.
+	notes.FImageValidator = notesDescFImage.Validators[0].(func(string) error)
+	// notesDescCreatedAt is the schema descriptor for created_at field.
+	notesDescCreatedAt := notesFields[6].Descriptor()
+	// notes.DefaultCreatedAt holds the default value on creation for the created_at field.
+	notes.DefaultCreatedAt = notesDescCreatedAt.Default.(func() time.Time)
+	// notesDescID is the schema descriptor for id field.
+	notesDescID := notesFields[0].Descriptor()
+	// notes.DefaultID holds the default value on creation for the id field.
+	notes.DefaultID = notesDescID.Default.(func() uuid.UUID)
 	userFields := schema.User{}.Fields()
 	_ = userFields
 	// userDescName is the schema descriptor for name field.

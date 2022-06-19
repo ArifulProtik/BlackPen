@@ -11,10 +11,13 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/ArifulProtik/BlackPen/ent/auth"
+	"github.com/ArifulProtik/BlackPen/ent/comment"
+	"github.com/ArifulProtik/BlackPen/ent/notes"
 	"github.com/ArifulProtik/BlackPen/ent/user"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // Client is the client that holds all ent builders.
@@ -24,6 +27,10 @@ type Client struct {
 	Schema *migrate.Schema
 	// Auth is the client for interacting with the Auth builders.
 	Auth *AuthClient
+	// Comment is the client for interacting with the Comment builders.
+	Comment *CommentClient
+	// Notes is the client for interacting with the Notes builders.
+	Notes *NotesClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 }
@@ -40,6 +47,8 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Auth = NewAuthClient(c.config)
+	c.Comment = NewCommentClient(c.config)
+	c.Notes = NewNotesClient(c.config)
 	c.User = NewUserClient(c.config)
 }
 
@@ -72,10 +81,12 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Auth:   NewAuthClient(cfg),
-		User:   NewUserClient(cfg),
+		ctx:     ctx,
+		config:  cfg,
+		Auth:    NewAuthClient(cfg),
+		Comment: NewCommentClient(cfg),
+		Notes:   NewNotesClient(cfg),
+		User:    NewUserClient(cfg),
 	}, nil
 }
 
@@ -93,10 +104,12 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Auth:   NewAuthClient(cfg),
-		User:   NewUserClient(cfg),
+		ctx:     ctx,
+		config:  cfg,
+		Auth:    NewAuthClient(cfg),
+		Comment: NewCommentClient(cfg),
+		Notes:   NewNotesClient(cfg),
+		User:    NewUserClient(cfg),
 	}, nil
 }
 
@@ -127,6 +140,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Auth.Use(hooks...)
+	c.Comment.Use(hooks...)
+	c.Notes.Use(hooks...)
 	c.User.Use(hooks...)
 }
 
@@ -220,6 +235,218 @@ func (c *AuthClient) Hooks() []Hook {
 	return c.hooks.Auth
 }
 
+// CommentClient is a client for the Comment schema.
+type CommentClient struct {
+	config
+}
+
+// NewCommentClient returns a client for the Comment from the given config.
+func NewCommentClient(c config) *CommentClient {
+	return &CommentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `comment.Hooks(f(g(h())))`.
+func (c *CommentClient) Use(hooks ...Hook) {
+	c.hooks.Comment = append(c.hooks.Comment, hooks...)
+}
+
+// Create returns a create builder for Comment.
+func (c *CommentClient) Create() *CommentCreate {
+	mutation := newCommentMutation(c.config, OpCreate)
+	return &CommentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Comment entities.
+func (c *CommentClient) CreateBulk(builders ...*CommentCreate) *CommentCreateBulk {
+	return &CommentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Comment.
+func (c *CommentClient) Update() *CommentUpdate {
+	mutation := newCommentMutation(c.config, OpUpdate)
+	return &CommentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CommentClient) UpdateOne(co *Comment) *CommentUpdateOne {
+	mutation := newCommentMutation(c.config, OpUpdateOne, withComment(co))
+	return &CommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CommentClient) UpdateOneID(id uuid.UUID) *CommentUpdateOne {
+	mutation := newCommentMutation(c.config, OpUpdateOne, withCommentID(id))
+	return &CommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Comment.
+func (c *CommentClient) Delete() *CommentDelete {
+	mutation := newCommentMutation(c.config, OpDelete)
+	return &CommentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *CommentClient) DeleteOne(co *Comment) *CommentDeleteOne {
+	return c.DeleteOneID(co.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *CommentClient) DeleteOneID(id uuid.UUID) *CommentDeleteOne {
+	builder := c.Delete().Where(comment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CommentDeleteOne{builder}
+}
+
+// Query returns a query builder for Comment.
+func (c *CommentClient) Query() *CommentQuery {
+	return &CommentQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Comment entity by its id.
+func (c *CommentClient) Get(ctx context.Context, id uuid.UUID) (*Comment, error) {
+	return c.Query().Where(comment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CommentClient) GetX(ctx context.Context, id uuid.UUID) *Comment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a Comment.
+func (c *CommentClient) QueryUser(co *Comment) *UserQuery {
+	query := &UserQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := co.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(comment.Table, comment.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, comment.UserTable, comment.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(co.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *CommentClient) Hooks() []Hook {
+	return c.hooks.Comment
+}
+
+// NotesClient is a client for the Notes schema.
+type NotesClient struct {
+	config
+}
+
+// NewNotesClient returns a client for the Notes from the given config.
+func NewNotesClient(c config) *NotesClient {
+	return &NotesClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `notes.Hooks(f(g(h())))`.
+func (c *NotesClient) Use(hooks ...Hook) {
+	c.hooks.Notes = append(c.hooks.Notes, hooks...)
+}
+
+// Create returns a create builder for Notes.
+func (c *NotesClient) Create() *NotesCreate {
+	mutation := newNotesMutation(c.config, OpCreate)
+	return &NotesCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Notes entities.
+func (c *NotesClient) CreateBulk(builders ...*NotesCreate) *NotesCreateBulk {
+	return &NotesCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Notes.
+func (c *NotesClient) Update() *NotesUpdate {
+	mutation := newNotesMutation(c.config, OpUpdate)
+	return &NotesUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *NotesClient) UpdateOne(n *Notes) *NotesUpdateOne {
+	mutation := newNotesMutation(c.config, OpUpdateOne, withNotes(n))
+	return &NotesUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *NotesClient) UpdateOneID(id uuid.UUID) *NotesUpdateOne {
+	mutation := newNotesMutation(c.config, OpUpdateOne, withNotesID(id))
+	return &NotesUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Notes.
+func (c *NotesClient) Delete() *NotesDelete {
+	mutation := newNotesMutation(c.config, OpDelete)
+	return &NotesDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *NotesClient) DeleteOne(n *Notes) *NotesDeleteOne {
+	return c.DeleteOneID(n.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *NotesClient) DeleteOneID(id uuid.UUID) *NotesDeleteOne {
+	builder := c.Delete().Where(notes.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &NotesDeleteOne{builder}
+}
+
+// Query returns a query builder for Notes.
+func (c *NotesClient) Query() *NotesQuery {
+	return &NotesQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Notes entity by its id.
+func (c *NotesClient) Get(ctx context.Context, id uuid.UUID) (*Notes, error) {
+	return c.Query().Where(notes.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *NotesClient) GetX(ctx context.Context, id uuid.UUID) *Notes {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryAuthor queries the author edge of a Notes.
+func (c *NotesClient) QueryAuthor(n *Notes) *UserQuery {
+	query := &UserQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := n.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(notes.Table, notes.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, notes.AuthorTable, notes.AuthorColumn),
+		)
+		fromV = sqlgraph.Neighbors(n.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *NotesClient) Hooks() []Hook {
+	return c.hooks.Notes
+}
+
 // UserClient is a client for the User schema.
 type UserClient struct {
 	config
@@ -303,6 +530,38 @@ func (c *UserClient) GetX(ctx context.Context, id uuid.UUID) *User {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryNotess queries the notess edge of a User.
+func (c *UserClient) QueryNotess(u *User) *NotesQuery {
+	query := &NotesQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(notes.Table, notes.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.NotessTable, user.NotessColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryComments queries the comments edge of a User.
+func (c *UserClient) QueryComments(u *User) *CommentQuery {
+	query := &CommentQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(comment.Table, comment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.CommentsTable, user.CommentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.

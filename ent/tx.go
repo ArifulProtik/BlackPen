@@ -14,6 +14,10 @@ type Tx struct {
 	config
 	// Auth is the client for interacting with the Auth builders.
 	Auth *AuthClient
+	// Comment is the client for interacting with the Comment builders.
+	Comment *CommentClient
+	// Notes is the client for interacting with the Notes builders.
+	Notes *NotesClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 
@@ -152,6 +156,8 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Auth = NewAuthClient(tx.config)
+	tx.Comment = NewCommentClient(tx.config)
+	tx.Notes = NewNotesClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 }
 

@@ -125,7 +125,7 @@ func (a *AuthController) Refresh(e echo.Context) error {
 	})
 }
 func (a *AuthController) Logout(e echo.Context) error {
-	id := e.Get("id").(*ent.User)
+	id := e.Get("user").(*ent.User)
 	err := a.AuthService.UpdateSession(id.ID)
 	if err != nil {
 		return e.JSON(http.StatusUnauthorized, utils.ErrorResponse{

@@ -6,7 +6,9 @@ import (
 )
 
 type Controller struct {
-	Auth *AuthController
+	Auth    *AuthController
+	Note    *NoteController
+	Comment *CommentController
 }
 
 func New(services *services.Service, AuthToken *auth.Token) *Controller {
@@ -15,6 +17,13 @@ func New(services *services.Service, AuthToken *auth.Token) *Controller {
 			UserService: services.User,
 			AuthService: services.Auth,
 			AuthToken:   AuthToken,
+		},
+		Note: &NoteController{
+			UserService: services.User,
+			Service:     services.Note,
+		},
+		Comment: &CommentController{
+			Service: services.Comment,
 		},
 	}
 }
